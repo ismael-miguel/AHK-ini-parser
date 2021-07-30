@@ -36,6 +36,13 @@ ini.SaveFile(A_ScriptDir . "\" . A_ScriptName . ".ini")
 
 Both methods work exactly the same.
 
+They should create a file that looks like this:
+
+```ini
+[settings]
+tickcount=123456789
+```
+
 <hr>
 
 ## Methods
