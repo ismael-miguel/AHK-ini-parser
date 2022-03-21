@@ -27,7 +27,7 @@ If you don't want to define a file yet, you can do like this:
 ```ahk
 #Include, ini.ahk
 
-ini := new Ini("") ; empty string required by the language
+ini := new Ini()
 
 ini.Set("tickcount", "settings", A_TickCount)
 
@@ -61,14 +61,15 @@ tickcount=123456789
 	Saves the file passed.  
 	This is **REQUIRED** to be used when passing an empty string when instancing.  
 	
- - `Get(value_name, section_name, default_value)`  
+ - `Get(value_name, section_name, default_value = "")`  
 	Retrieves a value from a section.  
 	If the value doesn't exist, returns the `default_value`.  
 	`section_name` can be an empty string.  
 	
- - `Set(value_name, section_name, value)`  
+ - `Set(value_name, section_name, value, comment = "")`  
 	Sets the value in a section.  
 	`section_name` can be an empty string.  
+	`comment` can be left empty and won't overwrite an existing value.
 	
  - `Delete(value_name, section_name)`  
 	Deletes the value in a section.  
@@ -89,6 +90,18 @@ tickcount=123456789
  - `Sections()`  
  	Returns an array with the name of all sections.
 	
+ - `GetComment(value_name, section_name = "")`  
+	Gets a comment, if one exists.  
+	`section_name` can be an empty string.  
+	
+ - `SetComment(value_name, section_name, comment)`  
+ 	Sets a comment to a value.  
+	`section_name` can be an empty string.  
+	
+ - `DeleteComment(value_name, section_name = "")`  
+	Deletes a comment, if one exists.  
+	`section_name` can be an empty string.  
+
 <hr>
 
 ## Feature support
@@ -97,7 +110,7 @@ This list isn't final.
 
 |        Feature        | Support? | About                                                                                                                        |
 |:---------------------:|:--------:|------------------------------------------------------------------------------------------------------------------------------|
-|        Comments       |     ❌    | Maintaining comments is too hard.                                                                                            |
+|        Comments       |     ⚠️    | Basic support implemented for values only.                                                                                   |
 | Values on<br>Sections |     ❌    | This is non-standard, but would be cool.                                                                                     |
 |         Arrays        |     ❌    | Too much work for something non-standard.                                                                                    |
 |       No section      |     ✔️    | All methods accept an empty string and will generate a file without a section when one isn't provided. This is non-standard! |

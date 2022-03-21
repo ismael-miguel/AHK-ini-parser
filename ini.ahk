@@ -2,8 +2,10 @@ Class Ini {
 	ini_file := ""
 	ini_data := {}
 
-	__New(ini_file)
+	__New(ini_file = "")
 	{
+		ini_file := Trim(ini_file)
+		
 		if ini_file
 		{
 			this.ini_file := ini_file
@@ -25,12 +27,12 @@ Class Ini {
 			}
 			else
 			{
-				this.ini_data := new Ini.IniData("")
+				this.ini_data := new Ini.IniData()
 			}
 		}
 		else
 		{
-			this.ini_data := new Ini.IniData("")
+			this.ini_data := new Ini.IniData()
 		}
 	}
 
@@ -59,6 +61,8 @@ Class Ini {
 
 	SaveFile(ini_file)
 	{
+		ini_file := Trim(ini_file)
+		
 		if ini_file
 		{
 			return InI.IniWriter.Write(ini_file, this.ini_data)
@@ -69,14 +73,18 @@ Class Ini {
 		}
 	}
 	
-	Get(value_name, section_name, default_value)
+	Get(value_name, section_name = "", default_value = "")
 	{
+		value_name := Trim(value_name)
+		section_name := Trim(section_name)
+		default_value := Trim(default_value)
+		
 		if !value_name
 		{
 			Throw, "Value name can't be empty."
 		}
 
-		if this.ini_data.HasValue(value_name, section_name)
+		if (this.ini_data.HasValue(value_name, section_name))
 		{
 			return this.ini_data.GetValue(value_name, section_name)
 		}
@@ -86,19 +94,68 @@ Class Ini {
 		}
 	}
 	
-	Set(value_name, section_name, value)
+	GetComment(value_name, section_name = "")
 	{
+		value_name := Trim(value_name)
+		section_name := Trim(section_name)
+		default_value := Trim(default_value)
+		
 		if !value_name
 		{
 			Throw, "Value name can't be empty."
 		}
 
+		if (!this.ini_data.HasValue(value_name, section_name))
+		{
+			return ""
+		}
+		
+		return this.ini_data.GetCommentValue(value_name, section_name)
+	}
+	
+	Set(value_name, section_name, value, comment = "")
+	{
+		value_name := Trim(value_name)
+		section_name := Trim(section_name)
+		value := Trim(value)
+		comment := Trim(comment)
+		
+		if (!value_name)
+		{
+			Throw, "Value name can't be empty."
+		}
+
 		this.ini_data.SetValue(value_name, value, section_name)
+		
+		if (comment)
+		{
+			this.ini_data.SetCommentValue(value_name, section_name, comment)
+		}
+	}
+	
+	SetComment(value_name, section_name, comment)
+	{
+		value_name := Trim(value_name)
+		section_name := Trim(section_name)
+		comment := Trim(comment)
+		
+		if (!value_name)
+		{
+			Throw, "Value name can't be empty."
+		}
+		
+		if (comment)
+		{
+			this.ini_data.SetCommentValue(value_name, section_name, comment)
+		}
 	}
 	
 	Delete(value_name, section_name)
 	{
-		if value_name
+		value_name := Trim(value_name)
+		section_name := Trim(section_name)
+		
+		if (value_name)
 		{
 			this.ini_data.DeleteValue(value_name, section_name)
 		}
@@ -107,19 +164,39 @@ Class Ini {
 			this.DeleteSection(section_name)
 		}
 	}
+	
+	DeleteComment(value_name, section_name)
+	{
+		value_name := Trim(value_name)
+		section_name := Trim(section_name)
+		
+		if !value_name
+		{
+			Throw, "Value name can't be empty."
+		}
+		
+		this.ini_data.SetCommentValue(value_name, section_name, "")
+	}
 
 	DeleteSection(section_name)
 	{
+		section_name := Trim(section_name)
+		
 		this.ini_data.DeleteSection(section_name)
 	}
 
 	Exists(value_name, section_name)
 	{
+		value_name := Trim(value_name)
+		section_name := Trim(section_name)
+		
 		return this.ini_data.HasValue(value_name, section_name)
 	}
 
 	ExistsSection(section_name)
 	{
+		section_name := Trim(section_name)
+		
 		return this.ini_data.HasSection(section_name)
 	}
 
@@ -132,7 +209,7 @@ Class Ini {
 	class IniData {
 		data := {}
 
-		__New(ini_file)
+		__New(ini_file = "")
 		{
 			if(ini_file)
 			{
@@ -210,15 +287,27 @@ Class Ini {
 
 		SetValue(value_name, value, section_name)
 		{
-			if !this.HasSection(section_name)
+			if (!this.HasSection(section_name))
 			{
 				this.CreateSection(section_name)
 			}
-
-			this.data[section_name][value_name] := value
+			
+			if (!this.data[section_name].HasKey(value_name))
+			{
+				this.data[section_name][value_name] := {"value": value, "comment": ""}
+			}
+			else
+			{
+				this.data[section_name][value_name].value := value
+			}
 		}
 
 		GetValue(value_name, section_name)
+		{
+			return this.GetValueObj(value_name, section_name).value
+		}
+
+		GetValueObj(value_name, section_name)
 		{
 			if !this.HasValue(value_name, section_name)
 			{
@@ -235,6 +324,37 @@ Class Ini {
 				this.data[section_name][value_name].Remove()
 			}
 		}
+		
+		
+		HasCommentValue(value_name, section_name)
+		{
+			if !this.HasValue(value_name, section_name)
+			{
+				return False
+			}
+			
+			return this.data[section_name][value_name].comment != ""
+		}
+		
+		GetCommentValue(value_name, section_name)
+		{
+			if !this.HasValue(value_name, section_name)
+			{
+				return ""
+			}
+			
+			return this.data[section_name][value_name].comment
+		}
+		
+		SetCommentValue(value_name, section_name, comment)
+		{
+			if !this.HasValue(value_name, section_name)
+			{
+				return False
+			}
+			
+			this.data[section_name][value_name].comment := comment
+		}
 	}
 
 	class IniParser {
@@ -245,12 +365,16 @@ Class Ini {
 
 			Loop, read, %ini_file%
 			{
-				if !A_LoopReadLine ; empty line - must ignore
+				; lines can be nothing but whitespace
+				; we clean them up before processing any further
+				line := Trim(A_LoopReadLine)
+				
+				if !line ; empty line - must ignore
 				{
 					Continue
 				}
 
-				parsed_line := InI.IniParser.ParseLine(A_LoopReadLine, section_name)
+				parsed_line := InI.IniParser.ParseLine(line, section_name)
 
 				if !parsed_line
 				{
@@ -277,12 +401,15 @@ Class Ini {
 
 			Loop, parse, ini_text, `n, `r
 			{
-				if !A_LoopField ; empty line - must ignore
+				; read Parse(ini_file)
+				line := Trim(A_LoopField)
+				
+				if !line ; empty line - must ignore
 				{
 					Continue
 				}
 
-				parsed_line := InI.IniParser.ParseLine(A_LoopField, section_name)
+				parsed_line := InI.IniParser.ParseLine(line, section_name)
 
 				if !parsed_line
 				{
@@ -309,40 +436,86 @@ Class Ini {
 				return {}
 			}
 			
-			data[parsed_line.name] := parsed_line.value
+			data[parsed_line.name] := {"value": parsed_line.value, "comment": parsed_line.comment}
 			return data
 		}
 
 		ParseLine(ini_line, current_section_name)
 		{
-			; can't have values with newlines
-			line := StrReplace(RegExReplace(ini_line, "^\s+|\s+$"), "`r`n", " ")
-			char := SubStr(line, 1, 1) ; WHAT THE FUCK? START INDEX AT 1?????
-
-			if (char == "[") ; section identified - needs () because fuck you, that's why
+			char := SubStr(ini_line, 1, 1) ; WHAT THE FUCK? START INDEX AT 1?????
+			
+			; section identified - needs () because fuck you, that's why
+			if (char == "[")
 			{
-				section_name := InI.IniParser.ParseSection(line)
-				return {"section": section_name, "name": "", "value": ""}
+				return InI.IniParser.ParseSection(ini_line)
 			}
+			; comment identified - handle adding it to the section or next value
+			else if (char == "`;")
+			{
+				; TODO: implement proper comment handling
+				return InI.IniParser.ParseComment(ini_line)
+			}
+			; otherwise, must be a value
 			else
 			{
-				; otherwise, must be a value
-				value := InI.IniParser.ParseValue(line)
-				return {"section": current_section_name, "name": value[1], "value": value[2]} ; WHAT THE FUCK IS THIS...
+				value_data := InI.IniParser.ParseValue(ini_line)
+				
+				if (value_data)
+				{
+					value_data.section := current_section_name
+				}
+				
+				return value_data
 			}
 		}
 
 		ParseSection(line)
 		{
+			section_data := {"section": "", "name": "", "value": "", "comment": ""}
+			
+			; ... you need to escape the ; because it will parse as a comment otherwise
+			line_data := StrSplit(line, "`;", " `t", 2)
+			
 			; goal - trim the [] from the line
-			return RegExReplace(line, "^\[|\]$")
+			section_data.section := Trim(line_data[1], " `t[]")
+			
+			; if a comment exists, add it to the data
+			if (line_data[2])
+			{
+				comment := InI.IniParser.ParseComment(line_data[2])
+				if (comment.comment)
+				{
+					section_data.comment := comment.comment
+				}
+			}
+			
+			return section_data
 		}
 
 		ParseValue(line)
 		{
+			value_data := {"section": "", "name": "", "value": "", "comment": ""}
+			
+			line_data := StrSplit(line, "`;", " `t", 2)
+			
 			; only want to split once, to preserve any values
-			values := StrSplit(line, [" = ", " =", "= ", "="], " `t", 2)
-			return values
+			values := StrSplit(line_data[1], "=", " `t", 2)
+			value_data.name := values[1]
+			value_data.value := values[2]
+			
+			; if a comment exists, add it to the data
+			if (line_data[2])
+			{
+				value_data.comment := Trim(line_data[2], " `t")
+			}
+			
+			
+			return value_data
+		}
+
+		ParseComment(line)
+		{
+			return {"section": "", "name": "", "value": "", "comment": LTrim(line, "; `t")}
 		}
 	}
 
@@ -367,10 +540,10 @@ Class Ini {
 						continue
 					}
 
-					section := ini_data.GetSection(section_name)
-					if section
+					section_data := ini_data.GetSection(section_name)
+					if section_data
 					{
-						line := "[" . section_name . "]`r`n" . InI.IniWriter.MakeValues(section) . "`r`n"
+						line := "[" . section_name . "]`r`n" . InI.IniWriter.MakeValues(section_data) . "`r`n"
 						
 						file.Write(line)
 					}
@@ -392,7 +565,14 @@ Class Ini {
 
 			for key, value in data
 			{
-				ini_text .= key . "=" . value . "`r`n"
+				line := key . " = "  . (value.value)
+				
+				if (value.comment)
+				{
+					line .= " `; " . value.comment
+				}
+				
+				ini_text .= line . "`r`n"
 			}
 
 			return ini_text
